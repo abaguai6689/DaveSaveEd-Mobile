@@ -21,10 +21,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # 不使用 cache，因为我们没有 package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build web app
         run: npm run build
@@ -34,6 +34,7 @@ jobs:
         with:
           name: web-build
           path: dist/
+          retention-days: 1
 
   build-android:
     name: Build Android APK
@@ -47,10 +48,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Download web build
         uses: actions/download-artifact@v4
@@ -70,29 +70,30 @@ jobs:
       - name: Install Capacitor Android platform
         run: |
           npm install @capacitor/android
-          npx cap add android || true
+          npx cap add android 2>/dev/null || echo "Android platform already exists"
           npx cap sync android
 
       - name: Build Android APK (Debug)
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: android-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
 
       - name: Build Android APK (Release)
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           cd android
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease --no-daemon
 
       - name: Sign Release APK
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && env.SIGNING_KEY != ''
         uses: r0adkll/sign-android-release@v1
         with:
           releaseDirectory: android/app/build/outputs/apk/release
@@ -100,13 +101,24 @@ jobs:
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
 
-      - name: Upload Release APK
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Upload Unsigned Release APK
+        if: startsWith(github.ref, 'refs/tags/') && env.SIGNING_KEY == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk-unsigned
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          retention-days: 30
+
+      - name: Upload Signed Release APK
+        if: startsWith(github.ref, 'refs/tags/') && env.SIGNING_KEY != ''
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
           path: android/app/build/outputs/apk/release/*.apk
+          retention-days: 30
 
   create-release:
     name: Create GitHub Release
@@ -119,58 +131,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download Release APK
+      - name: Download APK artifacts
         uses: actions/download-artifact@v4
         with:
-          name: android-release-apk
-          path: ./apks/
+          path: ./artifacts/
+
+      - name: Organize release files
+        run: |
+          mkdir -p ./release/
+          # 复制 Debug APK
+          if [ -f "./artifacts/android-debug-apk/app-debug.apk" ]; then
+            cp "./artifacts/android-debug-apk/app-debug.apk" "./release/DaveSaveEd-Mobile-debug.apk"
+          fi
+          # 复制 Release APK（签名或未签名）
+          if [ -f "./artifacts/android-release-apk/app-release.apk" ]; then
+            cp "./artifacts/android-release-apk/app-release.apk" "./release/DaveSaveEd-Mobile-release.apk"
+          elif [ -f "./artifacts/android-release-apk-unsigned/app-release-unsigned.apk" ]; then
+            cp "./artifacts/android-release-apk-unsigned/app-release-unsigned.apk" "./release/DaveSaveEd-Mobile-release-unsigned.apk"
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./apks/*.apk
+          files: ./release/*.apk
           generate_release_notes: true
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  build-ios:
-    name: Build iOS (Export Only)
-    needs: build-web
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Download web build
-        uses: actions/download-artifact@v4
-        with:
-          name: web-build
-          path: dist/
-
-      - name: Install Capacitor iOS platform
-        run: |
-          npm install @capacitor/ios
-          npx cap add ios || true
-          npx cap sync ios
-
-      - name: Archive iOS project
-        run: |
-          cd ios
-          zip -r ../DaveSaveEd-iOS.zip .
-
-      - name: Upload iOS project
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-project
-          path: DaveSaveEd-iOS.zip

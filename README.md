@@ -114,6 +114,21 @@ base64 -i davesaveed.keystore
 /Android/data/[游戏包名]/files/
 ```
 
+## 已知问题与修复
+
+### 问题：GitHub Actions 构建失败
+
+**错误信息：**
+```
+Dependencies lock file is not found...
+Supported file patterns: package-lock.json,npm-shrinkwrap.json,yarn.lock
+```
+
+**修复方法：**
+工作流已更新，使用 `npm install` 代替 `npm ci`，不再需要 `package-lock.json`。
+
+如果你使用的是旧版本，请更新 `.github/workflows/build-android.yml` 文件。
+
 ## 项目结构
 
 ```
@@ -141,6 +156,15 @@ DaveSaveEd-Mobile/
 存档使用 XOR 加密，密钥为 `"GameData"`。特殊字段（如 FarmAnimal）会导致密钥失步，需要特殊处理。
 
 详细实现见 `src/core/saveEditor.ts`。
+
+## 文档索引
+
+| 文档 | 说明 |
+|------|------|
+| `QUICK_START.md` | 5分钟快速开始 |
+| `SETUP_GUIDE.md` | 详细设置说明 |
+| `PROJECT_STRUCTURE.md` | 项目结构说明 |
+| `FIX_GUIDE.md` | 问题修复指南 |
 
 ## 免责声明
 

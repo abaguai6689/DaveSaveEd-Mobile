@@ -4,21 +4,49 @@
 
 ## 目录
 
-1. [创建 GitHub 仓库](#1-创建-github-仓库)
-2. [上传代码](#2-上传代码)
-3. [配置 GitHub Actions](#3-配置-github-actions)
-4. [构建 APK](#4-构建-apk)
-5. [发布 Release](#5-发布-release)
+1. [快速修复（已构建失败的用户）](#1-快速修复已构建失败的用户)
+2. [创建 GitHub 仓库](#2-创建-github-仓库)
+3. [上传代码](#3-上传代码)
+4. [配置 GitHub Actions](#4-配置-github-actions)
+5. [构建 APK](#5-构建-apk)
+6. [发布 Release](#6-发布-release)
 
 ---
 
-## 1. 创建 GitHub 仓库
+## 1. 快速修复（已构建失败的用户）
 
-### 步骤 1.1: 登录 GitHub
+如果你之前的构建失败了，错误信息是：
+```
+Dependencies lock file is not found...
+```
+
+**修复方法：**
+
+1. 更新工作流文件（已修复）：
+   - 将 `npm ci` 改为 `npm install`
+   - 移除了不存在的 `@capacitor/toast` 依赖
+
+2. 重新上传代码：
+```bash
+cd DaveSaveEd-Mobile
+git add .
+git commit -m "Fix: replace npm ci with npm install"
+git push origin main
+```
+
+3. 重新触发构建：
+   - 进入 Actions 页面
+   - 点击 **Run workflow**
+
+---
+
+## 2. 创建 GitHub 仓库
+
+### 步骤 2.1: 登录 GitHub
 
 访问 [github.com](https://github.com) 并登录你的账号。
 
-### 步骤 1.2: 创建新仓库
+### 步骤 2.2: 创建新仓库
 
 1. 点击右上角 **+** 按钮，选择 **New repository**
 2. 填写仓库信息：
@@ -30,9 +58,9 @@
 
 ---
 
-## 2. 上传代码
+## 3. 上传代码
 
-### 方法 A: 使用 Git 命令行
+### 方法 A: 使用 Git 命令行（推荐）
 
 ```bash
 # 1. 进入项目目录
@@ -72,15 +100,15 @@ git push -u origin main
 
 ---
 
-## 3. 配置 GitHub Actions
+## 4. 配置 GitHub Actions
 
-### 步骤 3.1: 启用 Actions
+### 步骤 4.1: 启用 Actions
 
 1. 进入仓库页面
 2. 点击 **Actions** 标签
 3. 如果看到提示，点击 **I understand my workflows, go ahead and enable them**
 
-### 步骤 3.2: 配置签名密钥（可选但推荐）
+### 步骤 4.2: 配置签名密钥（可选但推荐）
 
 如果你想发布签名的 Release APK，需要配置签名密钥：
 
@@ -129,7 +157,7 @@ base64 -i davesaveed.keystore           # Linux，手动复制输出
 
 ---
 
-## 4. 构建 APK
+## 5. 构建 APK
 
 ### 自动构建
 
@@ -143,7 +171,7 @@ base64 -i davesaveed.keystore           # Linux，手动复制输出
 
 ### 下载构建产物
 
-1. 等待工作流完成（约 5-10 分钟）
+1. 等待工作流完成（约 10-15 分钟）
 2. 点击最新的工作流运行记录
 3. 在 **Artifacts** 部分下载：
    - `android-debug-apk` - 调试版本
@@ -151,7 +179,7 @@ base64 -i davesaveed.keystore           # Linux，手动复制输出
 
 ---
 
-## 5. 发布 Release
+## 6. 发布 Release
 
 ### 自动发布
 
@@ -184,7 +212,7 @@ GitHub Actions 会自动构建 APK 并附加到 Release。
 
 ---
 
-## 6. 安装 APK
+## 7. 安装 APK
 
 ### Android 设备安装
 
@@ -205,7 +233,13 @@ adb install app-debug.apk
 
 ---
 
-## 7. 故障排除
+## 8. 故障排除
+
+### 问题: "Dependencies lock file is not found"
+
+**原因**: 使用了 `npm ci` 但没有 `package-lock.json`
+
+**解决**: 已修复，工作流现在使用 `npm install`
 
 ### 问题: Actions 运行失败
 
@@ -235,7 +269,7 @@ adb install app-debug.apk
 
 ---
 
-## 8. 自定义配置
+## 9. 自定义配置
 
 ### 修改应用信息
 
@@ -267,7 +301,7 @@ const config: CapacitorConfig = {
 
 ---
 
-## 9. 进阶配置
+## 10. 进阶配置
 
 ### 启用 ProGuard 混淆
 
@@ -300,7 +334,7 @@ android {
 
 ---
 
-## 10. 获取帮助
+## 11. 获取帮助
 
 - [Capacitor 文档](https://capacitorjs.com/docs)
 - [GitHub Actions 文档](https://docs.github.com/en/actions)

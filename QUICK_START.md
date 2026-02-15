@@ -38,13 +38,34 @@ git push -u origin main
 
 1. 点击 **Actions** → **Build Android APK**
 2. 点击 **Run workflow** → **Run workflow**
-3. 等待 5-10 分钟
+3. 等待 10-15 分钟
 
 ### 第五步：下载 APK（随时）
 
 1. 构建完成后，点击最新的工作流记录
 2. 在 **Artifacts** 部分下载 `android-debug-apk`
 3. 解压得到 `app-debug.apk`
+
+---
+
+## 如果之前构建失败了
+
+### 问题
+```
+Dependencies lock file is not found...
+```
+
+### 解决方案
+
+1. 更新工作流文件（已修复）
+2. 重新推送代码：
+```bash
+cd DaveSaveEd-Mobile
+git add .
+git commit -m "Fix: use npm install instead of npm ci"
+git push origin main
+```
+3. 重新触发构建
 
 ---
 
@@ -67,7 +88,7 @@ GitHub Actions 会自动构建 Release APK 并发布到 Releases 页面。
 A: 检查以下几点：
 - 所有文件是否已上传
 - `package.json` 是否在根目录
-- Node.js 版本是否为 20
+- 查看 Actions 日志获取详细错误
 
 ### Q: 如何修改应用名称？
 
@@ -78,7 +99,7 @@ appName: '你的应用名称'
 
 ### Q: 如何配置签名？
 
-A: 查看 `SETUP_GUIDE.md` 第 3.2 节
+A: 查看 `SETUP_GUIDE.md` 第 4.2 节
 
 ### Q: iOS 支持吗？
 
